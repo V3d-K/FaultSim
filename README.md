@@ -94,28 +94,6 @@ The healing system is designed to recover performance without full retraining.
 
 ---
 
-
-# Tech Stack
-
-## Backend
-- Python
-- TensorFlow
-- Keras
-- NumPy
-
-## Frontend
-- HTML5
-- CSS3
-- JavaScript
-
-## Deep Learning
-- CNN Models
-- MLP Architectures
-- Fault Injection Modules
-- Statistical Monitoring Systems
-
----
-
 # GUI Features
 
 The FaultSim GUI includes:
@@ -130,23 +108,6 @@ The FaultSim GUI includes:
 
 ---
 
-# Project Structure
-
-```text
-FaultSim/
-│
-├── app.py
-├── fault_inject.py
-├── fault_injection_gui.html
-├── models/
-├── datasets/
-├── notebooks/
-├── results/
-├── screenshots/
-└── README.md
-```
-
----
 
 # Installation
 
