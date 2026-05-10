@@ -94,48 +94,6 @@ The healing system is designed to recover performance without full retraining.
 
 ---
 
-# Experimental Results
-
-## Baseline Model Performance
-
-| Metric | Value |
-|---|---|
-| Accuracy | 97.52% |
-| Loss | 0.0806 |
-
----
-
-## Key Findings
-
-- Output layers were the most fault-sensitive
-- Random weight swaps caused catastrophic collapse
-- Weight noise produced severe instability
-- Layer degradation showed highest robustness
-- Non-trainable layers remained highly resilient
-
----
-
-## Worst Fault Effects
-
-| Fault Type | Worst Accuracy |
-|---|---|
-| Random Swap | ~8–10% |
-| Weight Noise | ~13–18% |
-| Neuron Failure | ~38–54% |
-| Weight Zeroing | ~69–88% |
-
----
-
-# Layer-Wise Sensitivity Ranking
-
-| Rank | Layer | Sensitivity |
-|---|---|---|
-| 1 | Flatten Layer | Minimal |
-| 2 | Dropout Layer | Minimal |
-| 3 | Dense Hidden Layer | High |
-| 4 | Dense Output Layer | Critical |
-
----
 
 # Tech Stack
 
@@ -198,6 +156,7 @@ FaultSim/
 git clone https://github.com/V3d-K/FaultSim.git
 cd FaultSim
 ```
+---
 
 ## Install Dependencies
 
@@ -226,86 +185,3 @@ fault_injection_gui.html
 in your browser.
 
 ---
-
-# Example Fault Injection
-
-```python
-injector = FaultInjector()
-
-faulty_model = injector.inject(
-    model,
-    fault_type="neuron_failure",
-    severity=0.3,
-    target_layers=[1, 3]
-)
-```
-
----
-
-# Example Workflow
-
-```text
-1. Train baseline model
-2. Inject controlled faults
-3. Monitor degradation
-4. Detect abnormal behavior
-5. Trigger healing mechanism
-6. Re-evaluate performance
-```
-
----
-
-# Research Motivation
-
-Traditional neural network robustness methods are mostly static and rely on retraining or predefined attack assumptions.
-
-This project explores autonomous self-healing systems capable of:
-
-- runtime degradation detection
-- adaptive recovery
-- lightweight repair
-- resilience against unforeseen failures
-
-The framework draws inspiration from:
-- biological self-healing systems
-- adaptive AI systems
-- self-healing integrated circuits
-- closed-loop neural control frameworks
-
----
-
-# Future Improvements
-
-Planned future work includes:
-
-- transformer model support
-- reinforcement-learning-based healing
-- autoencoder-based reconstruction
-- adaptive recovery policy selection
-- distributed self-healing architectures
-- adversarial defense integration
-- hardware-level fault simulation
-
----
-
-# References
-
-1. Self-Healing Robust Neural Networks via Closed-Loop Control  
-2. Self-Healing Neural Networks Against Adversarial Attacks  
-3. AI-Based Approaches for Fault Detection and Recovery  
-4. Repairing Deep Neural Networks: Fix Patterns and Challenges  
-5. DeepPatch: Maintaining Deep Learning Model Programs  
-
----
-
-# Author
-
-Vedant Kanoje  
-Senior Design Project  
-VIT-AP University
-
----
-
-# License
-
-This project is intended for academic and research purposes.
