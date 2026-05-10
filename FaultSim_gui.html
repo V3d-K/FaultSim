@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FaultSim — Neural Fault Injection Workbench</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:       #080c10;
+  --bg2:      #0e1318;
+  --bg3:      #141b22;
+  --bg4:      #1a2230;
+  --border:   #1f2d3d;
+  --border2:  #2a3d52;
+  --text:     #cdd9e5;
+  --text2:    #768a9e;
+  --text3:    #3a4f63;
+  --cyan:     #39d0d8;
+  --cyan2:    #1a9aa0;
+  --green:    #3dce7a;
+  --green2:   #1e6e42;
+  --red:      #f05a5a;
+  --red2:     #7a1f1f;
+  --amber:    #e8a838;
+  --amber2:   #7a4a10;
+  --purple:   #a98cf4;
+  --purple2:  #4a2b8c;
+  --blue:     #4d9ef7;
+  --mono:     'JetBrains Mono', monospace;
+  --sans:     'Space Grotesk', sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.55;min-height:100vh;overflow-x:hidden;}
+
+/* GRID BACKGROUND */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(57,208,216,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(57,208,216,.03) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+
+.shell{max-width:1400px;margin:0 auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px;position:relative;z-index:1;}
+
+/* ── HEADER ── */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  position:relative;overflow:hidden;
+}
+header::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--purple),transparent);
+}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{
+  width:38px;height:38px;border-radius:8px;
+  background:linear-gradient(135deg,var(--cyan2),var(--purple2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 16px rgba(57,208,216,.25);
+}
+.logo-text{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:-.5px;color:var(--text);}
+.logo-sub{font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:12px;}
+.tech-tag{
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+  background:var(--bg3);border:1px solid var(--border);border-radius:4px;
+  padding:3px 8px;letter-spacing:.5px;
+}
+.status-pill{
+  display:flex;align-items:center;gap:7px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:20px;
+  padding:5px 14px;font-family:var(--mono);font-size:11px;color:var(--text2);
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.dot.amber{background:var(--amber);}
+.dot.red{background:var(--red);}
+.dot.pulse{animation:pulse 1.8s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.8);}}
+
+/* ── BANNER ── */
+.api-banner{
+  background:rgba(232,168,56,.08);border:1px solid rgba(232,168,56,.3);
+  border-radius:8px;padding:10px 16px;font-family:var(--mono);font-size:12px;
+  color:var(--amber);display:none;
+}
+.api-banner.show{display:block;}
+
+/* ── TRAIN BAR ── */
+.train-bar{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.section-label{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;flex-shrink:0;}
+.epoch-input{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:5px;
+  color:var(--text);font-family:var(--mono);font-size:13px;padding:5px 10px;
+  width:70px;outline:none;transition:border-color .15s;
+}
+.epoch-input:focus{border-color:var(--cyan);}
+.progress-wrap{flex:1;min-width:200px;}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan2),var(--cyan));border-radius:2px;transition:width .4s;}
+.progress-label{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:5px;}
+
+/* ── BUTTONS ── */
+.btn{
+  padding:7px 16px;border-radius:6px;font-family:var(--mono);font-size:11px;
+  cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;
+  border:1px solid var(--border2);background:var(--bg3);color:var(--text2);white-space:nowrap;
+}
+.btn:hover{border-color:var(--border2);color:var(--text);}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn-train{border-color:var(--cyan2);color:var(--cyan);}
+.btn-train:hover:not(:disabled){background:rgba(57,208,216,.08);border-color:var(--cyan);}
+.btn-inject{
+  width:100%;padding:11px;justify-content:center;font-size:13px;font-weight:600;
+  background:linear-gradient(135deg,var(--cyan2),rgba(57,208,216,.5));
+  border:1px solid var(--cyan);color:#fff;border-radius:7px;margin-top:16px;
+}
+.btn-inject:hover:not(:disabled){background:linear-gradient(135deg,var(--cyan),rgba(57,208,216,.7));}
+.btn-inject:active:not(:disabled){transform:scale(.98);}
+.btn-detect{
+  width:100%;padding:10px;justify-content:center;font-size:12px;font-weight:600;
+  background:rgba(169,140,244,.15);border:1px solid var(--purple);color:var(--purple);
+  border-radius:7px;margin-top:10px;
+}
+.btn-detect:hover:not(:disabled){background:rgba(169,140,244,.25);}
+.btn-heal{
+  width:100%;padding:10px;justify-content:center;font-size:12px;font-weight:600;
+  background:rgba(61,206,122,.15);border:1px solid var(--green);color:var(--green);
+  border-radius:7px;margin-top:10px;
+}
+.btn-heal:hover:not(:disabled){background:rgba(61,206,122,.25);}
+.btn-reset{border-color:transparent;color:var(--text3);}
+.btn-reset:hover:not(:disabled){border-color:var(--red);color:var(--red);}
+.btn-sm{padding:4px 10px;font-size:10px;}
+
+/* ── ARCH BAR ── */
+.arch-bar{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:12px 20px;display:flex;align-items:center;gap:0;overflow-x:auto;
+}
+.arch-layers{display:flex;align-items:center;flex:1;gap:0;}
+.arch-node{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.arch-box{
+  padding:6px 13px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg3);font-family:var(--mono);font-size:11px;color:var(--text2);
+  white-space:nowrap;transition:all .2s;cursor:default;
+}
+.arch-box.active{border-color:var(--cyan2);background:rgba(57,208,216,.07);color:var(--cyan);}
+.arch-box.fault{border-color:var(--red);background:rgba(240,90,90,.1);color:var(--red);}
+.arch-box.heal{border-color:var(--green);background:rgba(61,206,122,.1);color:var(--green);}
+.arch-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px;text-align:center;}
+.arch-arrow{width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text3);padding-bottom:16px;}
+
+/* ── LAYOUT ── */
+.main{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
+
+/* ── PANEL ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.panel:last-child{margin-bottom:0;}
+.panel-head{
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--text2);display:flex;align-items:center;gap:8px;
+}
+.ph-bar{width:3px;height:12px;border-radius:2px;flex-shrink:0;}
+.panel-body{padding:16px;}
+
+/* ── FAULT TYPES ── */
+.fault-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.fault-btn{
+  padding:8px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text2);font-family:var(--mono);font-size:10px;
+  cursor:pointer;transition:all .15s;text-align:center;line-height:1.3;
+}
+.fault-btn:hover{border-color:var(--border2);color:var(--text);}
+.fault-btn.active{border-color:var(--cyan);background:rgba(57,208,216,.08);color:var(--cyan);}
+
+/* ── FIELDS ── */
+.field{margin-bottom:16px;}
+.field:last-child{margin-bottom:0;}
+.field-label{
+  font-family:var(--mono);font-size:10px;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.field-val{font-weight:600;color:var(--cyan);font-size:13px;text-transform:none;letter-spacing:0;}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:3px;
+  background:var(--border);border-radius:2px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--cyan);cursor:pointer;border:2px solid var(--bg);
+  box-shadow:0 0 6px rgba(57,208,216,.5);
+}
+.slider-ticks{display:flex;justify-content:space-between;margin-top:5px;font-family:var(--mono);font-size:9px;color:var(--text3);}
+
+/* ── LAYER CHECKS ── */
+.layer-checks{display:flex;flex-direction:column;gap:5px;}
+.layer-check{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 10px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg3);cursor:pointer;transition:all .12s;user-select:none;
+}
+.layer-check:hover{border-color:var(--border2);}
+.layer-check.checked{border-color:rgba(57,208,216,.4);background:rgba(57,208,216,.05);}
+.layer-check input{display:none;}
+.chk-box{
+  width:13px;height:13px;border-radius:3px;border:1px solid var(--border2);
+  background:var(--bg2);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .1s;
+}
+.layer-check.checked .chk-box{background:var(--cyan);border-color:var(--cyan);}
+.chk-tick{display:none;fill:none;}
+.layer-check.checked .chk-tick{display:block;}
+.chk-label{font-family:var(--mono);font-size:10px;color:var(--text2);flex:1;}
+.layer-check.checked .chk-label{color:var(--text);}
+.chk-badge{
+  font-size:9px;padding:1px 6px;border-radius:3px;
+  background:var(--bg);color:var(--text3);border:1px solid var(--border);
+  font-family:var(--mono);
+}
+.layer-check.checked .chk-badge{color:var(--cyan);border-color:rgba(57,208,216,.3);}
+
+/* ── HEAL CONTROLS ── */
+.heal-mode-btns{display:flex;gap:6px;margin-bottom:12px;}
+.heal-mode-btn{
+  flex:1;padding:7px;border-radius:5px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text2);font-family:var(--mono);font-size:10px;
+  cursor:pointer;transition:all .12s;text-align:center;
+}
+.heal-mode-btn.active{border-color:var(--green);background:rgba(61,206,122,.08);color:var(--green);}
+.layer-idx-input{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:5px;
+  color:var(--text);font-family:var(--mono);font-size:12px;
+  padding:5px 10px;width:100%;outline:none;transition:border-color .15s;
+}
+.layer-idx-input:focus{border-color:var(--green);}
+
+/* ── METRICS ROW ── */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
+.mcard{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;position:relative;overflow:hidden;
+}
+.mcard::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.mcard.base::after{background:var(--cyan);}
+.mcard.fault-card::after{background:var(--red);}
+.mcard.healed-card::after{background:var(--green);}
+.mcard.delta-card::after{background:var(--amber);}
+.mlabel{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.mval{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text);line-height:1;}
+.mval.green{color:var(--green);}
+.mval.red{color:var(--red);}
+.mval.amber{color:var(--amber);}
+.mval.cyan{color:var(--cyan);}
+.mval.dim{color:var(--text3);letter-spacing:2px;font-size:18px;}
+.msub{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:5px;}
+
+/* ── 8-METRIC ROW ── */
+.metrics-row-8{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+
+/* ── CHART CARD ── */
+.chart-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;margin-bottom:14px;
+}
+.chart-card:last-child{margin-bottom:0;}
+.chart-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;border-bottom:1px solid var(--border);
+}
+.chart-title{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;}
+.legend{display:flex;gap:12px;align-items:center;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);font-family:var(--mono);}
+.leg-dot{width:8px;height:8px;border-radius:2px;}
+.chart-body{padding:14px;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 16px;background:var(--bg3);}
+.tab{
+  padding:9px 16px;font-family:var(--mono);font-size:10px;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--text2);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;
+}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+.tab-content{display:none;padding:14px;}
+.tab-content.active{display:block;}
+
+/* ── DETECT TABLE ── */
+.detect-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
+.detect-table th{
+  text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);
+  color:var(--text2);font-size:9px;text-transform:uppercase;letter-spacing:.5px;font-weight:500;
+}
+.detect-table td{padding:7px 10px;border-bottom:1px solid rgba(31,45,61,.6);color:var(--text);}
+.detect-table tr:last-child td{border-bottom:none;}
+.detect-table tr.flagged td{background:rgba(240,90,90,.05);}
+.flag-badge{
+  display:inline-block;padding:1px 7px;border-radius:3px;font-size:9px;
+  font-family:var(--mono);font-weight:600;
+}
+.flag-badge.yes{background:rgba(240,90,90,.2);color:var(--red);border:1px solid rgba(240,90,90,.3);}
+.flag-badge.no{background:rgba(61,206,122,.1);color:var(--green);border:1px solid rgba(61,206,122,.2);}
+.diff-bar-wrap{display:flex;align-items:center;gap:8px;}
+.diff-bar{height:6px;background:var(--red);border-radius:2px;min-width:2px;transition:width .3s;}
+
+/* ── WEIGHT DELTA TABLE ── */
+.delta-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
+.delta-table th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-size:9px;text-transform:uppercase;letter-spacing:.5px;font-weight:500;}
+.delta-table td{padding:7px 10px;border-bottom:1px solid rgba(31,45,61,.6);color:var(--text);}
+.delta-table tr:last-child td{border-bottom:none;}
+.pct-bar{display:inline-block;height:7px;background:rgba(240,90,90,.5);border-radius:2px;vertical-align:middle;margin-left:6px;}
+
+/* ── PREDICTIONS ── */
+.pred-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.pred-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:7px;
+  padding:10px 8px;text-align:center;
+}
+.pred-card.correct{border-color:rgba(61,206,122,.35);}
+.pred-card.wrong{border-color:rgba(240,90,90,.35);}
+.pred-digit{font-family:var(--mono);font-size:28px;font-weight:700;line-height:1;color:var(--text);margin-bottom:3px;}
+.pred-label{font-family:var(--mono);font-size:9px;color:var(--text2);}
+.pred-conf{font-family:var(--mono);font-size:10px;margin-top:3px;}
+.pred-conf.correct{color:var(--green);}
+.pred-conf.wrong{color:var(--red);}
+.prob-bars{display:flex;flex-direction:column;gap:2px;margin-top:6px;}
+.prob-bar-row{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:8px;color:var(--text3);}
+.prob-bar-fill{height:4px;border-radius:1px;background:var(--cyan2);transition:width .3s;}
+
+/* ── DETECT STATUS ── */
+.detect-status{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;
+  border-radius:8px;margin-bottom:12px;border:1px solid;
+}
+.detect-status.fault{background:rgba(240,90,90,.07);border-color:rgba(240,90,90,.3);}
+.detect-status.ok{background:rgba(61,206,122,.07);border-color:rgba(61,206,122,.3);}
+.detect-status.pending{background:rgba(57,208,216,.07);border-color:rgba(57,208,216,.2);}
+.ds-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+.detect-status.fault .ds-icon{background:rgba(240,90,90,.2);}
+.detect-status.ok .ds-icon{background:rgba(61,206,122,.2);}
+.ds-text{font-family:var(--mono);font-size:12px;}
+.ds-main{font-weight:600;}
+.detect-status.fault .ds-main{color:var(--red);}
+.detect-status.ok .ds-main{color:var(--green);}
+.ds-sub{font-size:10px;color:var(--text2);margin-top:2px;}
+
+/* ── HEAL RESULTS ── */
+.heal-result-bar{
+  padding:12px 16px;border-radius:8px;border:1px solid;margin-bottom:12px;
+}
+.heal-result-bar.success{background:rgba(61,206,122,.07);border-color:rgba(61,206,122,.3);}
+.heal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.heal-stat{text-align:center;padding:10px;background:var(--bg3);border-radius:7px;border:1px solid var(--border);}
+.heal-stat-label{font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.heal-stat-val{font-family:var(--mono);font-size:17px;font-weight:700;}
+.heal-stat-val.green{color:var(--green);}
+.heal-stat-val.amber{color:var(--amber);}
+.heal-stat-val.red{color:var(--red);}
+
+/* ── FAULT DESC ── */
+.fault-desc-box{
+  padding:12px;background:var(--bg3);border-radius:7px;border:1px solid var(--border);
+  font-size:11px;color:var(--text2);line-height:1.6;
+}
+.fault-desc-title{color:var(--cyan);font-family:var(--mono);font-size:10px;font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+
+/* ── LOG ── */
+.log-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.log-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;border-bottom:1px solid var(--border);background:var(--bg2);
+}
+.log-title{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;}
+.log-body{
+  padding:10px 14px;font-family:var(--mono);font-size:11px;line-height:1.9;
+  height:150px;overflow-y:auto;color:var(--text2);
+}
+.log-entry{display:flex;gap:10px;}
+.log-time{color:var(--text3);flex-shrink:0;font-size:10px;}
+.log-msg.info{color:var(--cyan);}
+.log-msg.ok{color:var(--green);}
+.log-msg.warn{color:var(--amber);}
+.log-msg.err{color:var(--red);}
+.log-msg.dim{color:var(--text3);}
+.log-msg.purple{color:var(--purple);}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:9px;
+  padding:12px 18px;font-family:var(--mono);font-size:12px;color:var(--text);
+  z-index:200;transform:translateY(80px);opacity:0;transition:all .3s;max-width:360px;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.err{border-color:var(--red);color:var(--red);}
+.toast.ok{border-color:var(--green);color:var(--green);}
+.toast.purple{border-color:var(--purple);color:var(--purple);}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.spin{display:inline-block;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── SCORES TAB ── */
+.score-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.score-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;position:relative;overflow:hidden;
+}
+.score-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.score-card.f1::after{background:var(--blue);}
+.score-card.auc::after{background:var(--purple);}
+.sc-label{font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+.sc-val{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;}
+.sc-val.blue{color:var(--blue);}
+.sc-val.purple{color:var(--purple);}
+.sc-val.green{color:var(--green);}
+.sc-val.amber{color:var(--amber);}
+.sc-val.red{color:var(--red);}
+.sc-val.dim{color:var(--text3);font-size:16px;letter-spacing:2px;}
+.sc-sub{font-family:var(--mono);font-size:9px;color:var(--text2);margin-top:4px;}
+.score-model-btns{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.score-model-btn{
+  padding:6px 14px;border-radius:5px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text2);font-family:var(--mono);font-size:10px;
+  cursor:pointer;transition:all .12s;
+}
+.score-model-btn.active{border-color:var(--blue);background:rgba(77,158,247,.1);color:var(--blue);}
+.score-model-btn:hover:not(.active){border-color:var(--border2);color:var(--text);}
+.per-class-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
+.per-class-table th{text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);color:var(--text2);font-size:9px;text-transform:uppercase;letter-spacing:.5px;font-weight:500;}
+.per-class-table td{padding:6px 8px;border-bottom:1px solid rgba(31,45,61,.5);color:var(--text);}
+.per-class-table tr:last-child td{border-bottom:none;}
+.mini-bar{display:inline-block;height:6px;border-radius:2px;vertical-align:middle;margin-left:5px;}
+
+.section-divider{
+  display:flex;align-items:center;gap:12px;
+  font-family:var(--mono);font-size:9px;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.8px;margin:10px 0;
+}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── EMPTY STATES ── */
+.empty-state{
+  text-align:center;padding:30px 20px;
+  font-family:var(--mono);font-size:11px;color:var(--text3);
+}
+.empty-icon{font-size:24px;margin-bottom:8px;}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="3" fill="rgba(255,255,255,.9)"/>
+        <circle cx="3" cy="3" r="2" fill="rgba(255,255,255,.5)"/>
+        <circle cx="17" cy="3" r="2" fill="rgba(255,255,255,.5)"/>
+        <circle cx="3" cy="17" r="2" fill="rgba(255,255,255,.5)"/>
+        <circle cx="17" cy="17" r="2" fill="rgba(255,255,255,.5)"/>
+        <line x1="5" y1="3" x2="8" y2="8.5" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+        <line x1="15" y1="3" x2="12" y2="8.5" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+        <line x1="5" y1="17" x2="8" y2="11.5" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+        <line x1="15" y1="17" x2="12" y2="11.5" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">FaultSim</div>
+      <div class="logo-sub">Neural Fault Injection · Detection · Healing Workbench</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="tech-tag">MNIST · TensorFlow · Flask</span>
+    <div class="status-pill"><div class="dot pulse" id="status-dot"></div><span id="status-text">connecting…</span></div>
+  </div>
+</header>
+
+<!-- API BANNER -->
+<div class="api-banner" id="api-banner">
+  ⚠ Cannot reach backend at http://127.0.0.1:5000 — ensure <code>python app.py</code> is running
+</div>
+
+<!-- TRAIN BAR -->
+<div class="train-bar">
+  <span class="section-label">Training</span>
+  <input class="epoch-input" type="number" id="epoch-input" min="1" max="20" value="5">
+  <span class="section-label">epochs</span>
+  <button class="btn btn-train" id="train-btn">▶ Train Model</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label">awaiting training…</div>
+  </div>
+  <button class="btn" id="pred-btn" disabled>◈ Sample Predictions</button>
+  <button class="btn" id="scores-btn-top" disabled style="border-color:var(--blue);color:var(--blue);">⬡ F1 &amp; AUC</button>
+  <button class="btn btn-reset" id="reset-btn" disabled>↺ Reset Weights</button>
+</div>
+
+<!-- ARCH BAR -->
+<div class="arch-bar">
+  <span class="section-label" style="margin-right:14px;">Architecture</span>
+  <div class="arch-layers">
+    <div class="arch-node">
+      <div class="arch-box">Input</div>
+      <div class="arch-sub">28×28</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node">
+      <div class="arch-box" id="arch-0">Flatten</div>
+      <div class="arch-sub">784</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node">
+      <div class="arch-box" id="arch-1">Dense</div>
+      <div class="arch-sub">128 · ReLU</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node">
+      <div class="arch-box" id="arch-2">Dropout</div>
+      <div class="arch-sub">p=0.2</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node">
+      <div class="arch-box" id="arch-3">Dense</div>
+      <div class="arch-sub">10 · Logits</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node">
+      <div class="arch-box">Softmax</div>
+      <div class="arch-sub">Output</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main">
+
+  <!-- LEFT COLUMN: CONTROLS -->
+  <div>
+
+    <!-- FAULT INJECTION PANEL -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="ph-bar" style="background:var(--red);"></div>
+        Fault Injection
+      </div>
+      <div class="panel-body">
+
+        <div class="field">
+          <div class="field-label">Fault Type</div>
+          <div class="fault-grid">
+            <div class="fault-btn active" data-fault="neuron_failure">neuron_failure</div>
+            <div class="fault-btn" data-fault="weight_noise">weight_noise</div>
+            <div class="fault-btn" data-fault="weight_zero">weight_zero</div>
+            <div class="fault-btn" data-fault="layer_degradation">layer_degradation</div>
+            <div class="fault-btn" data-fault="random_swap" style="grid-column:span 2;">random_swap</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Severity <span class="field-val" id="sev-val">0.30</span></div>
+          <input type="range" id="severity" min="0.05" max="1.0" step="0.05" value="0.30">
+          <div class="slider-ticks"><span>0.05</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1.0</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Target Layers</div>
+          <div class="layer-checks">
+            <label class="layer-check" id="lc-0">
+              <input type="checkbox" data-layer="0">
+              <div class="chk-box"><svg class="chk-tick" width="9" height="9" viewBox="0 0 9 9"><polyline points="1.5,4.5 3.5,6.5 7.5,2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="chk-label">L0 — Flatten</div>
+              <div class="chk-badge">L0</div>
+            </label>
+            <label class="layer-check checked" id="lc-1">
+              <input type="checkbox" checked data-layer="1">
+              <div class="chk-box"><svg class="chk-tick" width="9" height="9" viewBox="0 0 9 9"><polyline points="1.5,4.5 3.5,6.5 7.5,2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="chk-label">L1 — Dense 128</div>
+              <div class="chk-badge">L1</div>
+            </label>
+            <label class="layer-check" id="lc-2">
+              <input type="checkbox" data-layer="2">
+              <div class="chk-box"><svg class="chk-tick" width="9" height="9" viewBox="0 0 9 9"><polyline points="1.5,4.5 3.5,6.5 7.5,2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="chk-label">L2 — Dropout</div>
+              <div class="chk-badge">L2</div>
+            </label>
+            <label class="layer-check checked" id="lc-3">
+              <input type="checkbox" checked data-layer="3">
+              <div class="chk-box"><svg class="chk-tick" width="9" height="9" viewBox="0 0 9 9"><polyline points="1.5,4.5 3.5,6.5 7.5,2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="chk-label">L3 — Dense 10</div>
+              <div class="chk-badge">L3</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="fault-desc-box" id="fault-desc-box">
+          <div class="fault-desc-title" id="fd-title">neuron_failure</div>
+          <div id="fd-text">Zeroes out a random subset of neurons (columns) in weight matrices. Simulates hardware neuron stuck-at-zero faults.</div>
+        </div>
+
+        <button class="btn btn-inject" id="inject-btn" disabled>⚡ Inject Fault</button>
+      </div>
+    </div>
+
+    <!-- DETECTION PANEL -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="ph-bar" style="background:var(--purple);"></div>
+        Fault Detection
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <div class="field-label">Threshold <span class="field-val" id="thresh-val">0.20</span></div>
+          <input type="range" id="threshold" min="0.01" max="1.0" step="0.01" value="0.20">
+          <div class="slider-ticks"><span>0.01</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1.0</span></div>
+        </div>
+        <div class="field">
+          <div class="field-label">Sample Size <span class="field-val" id="sample-val">300</span></div>
+          <input type="range" id="sample-size" min="50" max="1000" step="50" value="300">
+          <div class="slider-ticks"><span>50</span><span>300</span><span>600</span><span>1000</span></div>
+        </div>
+        <button class="btn btn-detect" id="detect-btn" disabled>🔍 Run Detection</button>
+      </div>
+    </div>
+
+    <!-- HEALING PANEL -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="ph-bar" style="background:var(--green);"></div>
+        Model Healing
+      </div>
+      <div class="panel-body">
+        <div class="field-label" style="margin-bottom:8px;">Heal Mode</div>
+        <div class="heal-mode-btns">
+          <button class="heal-mode-btn active" data-mode="rollback" id="hm-rollback">Rollback Blend</button>
+          <button class="heal-mode-btn" data-mode="layer" id="hm-layer">Layer Repair</button>
+        </div>
+
+        <div id="heal-rollback-controls">
+          <div class="field">
+            <div class="field-label">Blend Strength <span class="field-val" id="strength-val">0.50</span></div>
+            <input type="range" id="heal-strength" min="0.0" max="1.0" step="0.05" value="0.50">
+            <div class="slider-ticks"><span>0.0</span><span>0.25</span><span>0.50</span><span>0.75</span><span>1.0</span></div>
+          </div>
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);line-height:1.6;">
+            <span style="color:var(--green);">1.0</span> = full restore to baseline &nbsp;·&nbsp; <span style="color:var(--amber);">0.0</span> = no change
+          </div>
+        </div>
+
+        <div id="heal-layer-controls" style="display:none;">
+          <div class="field">
+            <div class="field-label">Layer Index to Repair</div>
+            <input class="layer-idx-input" type="number" id="layer-idx" min="0" max="3" value="1" placeholder="0–3">
+          </div>
+          <div style="font-size:10px;color:var(--text2);font-family:var(--mono);">Fully restores one layer to its original baseline weights.</div>
+        </div>
+
+        <button class="btn btn-heal" id="heal-btn" disabled>✦ Heal Model</button>
+      </div>
+    </div>
+
+  </div><!-- /left -->
+
+  <!-- RIGHT COLUMN: RESULTS -->
+  <div>
+
+    <!-- METRICS: ALL 8 -->
+    <div class="metrics-row-8">
+      <div class="mcard base">
+        <div class="mlabel">Baseline Acc</div>
+        <div class="mval dim" id="base-acc">—</div>
+        <div class="msub" id="base-acc-sub">train first</div>
+      </div>
+      <div class="mcard base">
+        <div class="mlabel">Baseline Loss</div>
+        <div class="mval dim" id="base-loss">—</div>
+        <div class="msub" id="base-loss-sub">train first</div>
+      </div>
+      <div class="mcard fault-card">
+        <div class="mlabel">Faulty Acc</div>
+        <div class="mval dim" id="faulty-acc">—</div>
+        <div class="msub" id="faulty-acc-sub">inject fault</div>
+      </div>
+      <div class="mcard fault-card">
+        <div class="mlabel">Faulty Loss</div>
+        <div class="mval dim" id="faulty-loss">—</div>
+        <div class="msub" id="faulty-loss-sub">inject fault</div>
+      </div>
+      <div class="mcard delta-card">
+        <div class="mlabel">Acc Drop</div>
+        <div class="mval dim" id="acc-drop">—</div>
+        <div class="msub" id="acc-drop-sub">pp from baseline</div>
+      </div>
+      <div class="mcard delta-card">
+        <div class="mlabel">Loss Δ</div>
+        <div class="mval dim" id="loss-delta">—</div>
+        <div class="msub" id="loss-delta-sub">from baseline</div>
+      </div>
+      <div class="mcard healed-card">
+        <div class="mlabel">Healed Acc</div>
+        <div class="mval dim" id="healed-acc">—</div>
+        <div class="msub" id="healed-acc-sub">heal model</div>
+      </div>
+      <div class="mcard healed-card">
+        <div class="mlabel">Recovery</div>
+        <div class="mval dim" id="acc-recovery">—</div>
+        <div class="msub" id="acc-recovery-sub">pp recovered</div>
+      </div>
+    </div>
+
+    <!-- TABBED RESULTS AREA -->
+    <div class="chart-card">
+      <div class="tabs" id="results-tabs">
+        <div class="tab active" data-tab="history">Run History</div>
+        <div class="tab" data-tab="detect">Detection</div>
+        <div class="tab" data-tab="heal">Heal Results</div>
+        <div class="tab" data-tab="deltas">Weight Deltas</div>
+        <div class="tab" data-tab="scores">F1 &amp; ROC-AUC</div>
+        <div class="tab" data-tab="predictions">Predictions</div>
+      </div>
+
+      <!-- TAB: RUN HISTORY -->
+      <div class="tab-content active" id="tab-history">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between;">
+              <span>Accuracy — run history</span>
+              <span style="display:flex;gap:10px;">
+                <span style="display:flex;align-items:center;gap:4px;"><span class="leg-dot" style="background:#39d0d8;"></span>Baseline</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span class="leg-dot" style="background:#f05a5a;"></span>Faulty</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span class="leg-dot" style="background:#3dce7a;"></span>Healed</span>
+              </span>
+            </div>
+            <div style="position:relative;height:210px;"><canvas id="accChart"></canvas></div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between;">
+              <span>Loss — run history</span>
+              <span style="display:flex;gap:10px;">
+                <span style="display:flex;align-items:center;gap:4px;"><span class="leg-dot" style="background:#39d0d8;"></span>Baseline</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span class="leg-dot" style="background:#e8a838;"></span>Faulty</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span class="leg-dot" style="background:#3dce7a;"></span>Healed</span>
+              </span>
+            </div>
+            <div style="position:relative;height:210px;"><canvas id="lossChart"></canvas></div>
+          </div>
+        </div>
+        <div id="history-empty" class="empty-state">
+          <div class="empty-icon">📊</div>
+          <div>Inject a fault to see run history</div>
+        </div>
+        <div id="history-table-wrap" style="display:none;margin-top:14px;">
+          <table class="detect-table" id="history-table">
+            <thead><tr><th>#</th><th>Fault Type</th><th>Sev</th><th>Layers</th><th>Base Acc</th><th>Faulty Acc</th><th>Healed Acc</th><th>Recovery</th></tr></thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: DETECTION -->
+      <div class="tab-content" id="tab-detect">
+        <div id="detect-empty" class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div>Run detection after injecting a fault</div>
+        </div>
+        <div id="detect-results" style="display:none;">
+          <div class="detect-status pending" id="detect-status-bar">
+            <div class="ds-icon">?</div>
+            <div class="ds-text">
+              <div class="ds-main" id="ds-main-text">No detection run yet</div>
+              <div class="ds-sub" id="ds-sub-text">Run detection to analyse layer activations</div>
+            </div>
+          </div>
+          <table class="detect-table" id="detect-table">
+            <thead><tr><th>#</th><th>Layer</th><th>Baseline Mean</th><th>Current Mean</th><th>Diff</th><th>Threshold</th><th>Status</th></tr></thead>
+            <tbody id="detect-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: HEAL RESULTS -->
+      <div class="tab-content" id="tab-heal">
+        <div id="heal-empty" class="empty-state">
+          <div class="empty-icon">✦</div>
+          <div>Heal the model after fault injection</div>
+        </div>
+        <div id="heal-results" style="display:none;">
+          <div class="heal-result-bar success" id="heal-result-bar">
+            <div style="font-family:var(--mono);font-size:11px;color:var(--green);font-weight:600;margin-bottom:10px;" id="heal-mode-label">Rollback Blend — strength 0.50</div>
+            <div class="heal-grid">
+              <div class="heal-stat">
+                <div class="heal-stat-label">Pre-Heal Acc</div>
+                <div class="heal-stat-val amber" id="h-pre-acc">—</div>
+              </div>
+              <div class="heal-stat">
+                <div class="heal-stat-label">Post-Heal Acc</div>
+                <div class="heal-stat-val green" id="h-post-acc">—</div>
+              </div>
+              <div class="heal-stat">
+                <div class="heal-stat-label">Recovery</div>
+                <div class="heal-stat-val green" id="h-recovery">—</div>
+              </div>
+              <div class="heal-stat">
+                <div class="heal-stat-label">Baseline Acc</div>
+                <div class="heal-stat-val" id="h-base-acc" style="color:var(--cyan);">—</div>
+              </div>
+              <div class="heal-stat">
+                <div class="heal-stat-label">Healed Loss</div>
+                <div class="heal-stat-val" id="h-post-loss" style="color:var(--text);">—</div>
+              </div>
+              <div class="heal-stat">
+                <div class="heal-stat-label">Remaining Gap</div>
+                <div class="heal-stat-val amber" id="h-gap">—</div>
+              </div>
+            </div>
+          </div>
+          <div style="position:relative;height:180px;margin-top:12px;">
+            <canvas id="healChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: WEIGHT DELTAS -->
+      <div class="tab-content" id="tab-deltas">
+        <div id="deltas-empty" class="empty-state">
+          <div class="empty-icon">⚖</div>
+          <div>Weight delta analysis appears after fault injection</div>
+        </div>
+        <div id="deltas-results" style="display:none;">
+          <table class="delta-table" id="delta-table">
+            <thead><tr><th>Weight Tensor</th><th>Mean |Δw|</th><th>Max |Δw|</th><th>% Changed</th></tr></thead>
+            <tbody id="delta-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: F1 & ROC-AUC SCORES -->
+      <div class="tab-content" id="tab-scores">
+        <!-- Model selector -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div class="score-model-btns">
+            <button class="score-model-btn active" data-smodel="current">Current Model</button>
+            <button class="score-model-btn" data-smodel="baseline">Baseline</button>
+            <button class="score-model-btn" data-smodel="faulty">Faulty</button>
+          </div>
+          <button class="btn" id="scores-btn" disabled style="border-color:var(--blue);color:var(--blue);">⬡ Compute Scores</button>
+        </div>
+
+        <div id="scores-empty" class="empty-state">
+          <div class="empty-icon">⬡</div>
+          <div>Train the model then click "Compute Scores" to evaluate F1 &amp; ROC-AUC</div>
+        </div>
+
+        <div id="scores-results" style="display:none;">
+          <!-- Summary metric cards -->
+          <div class="score-cards">
+            <div class="score-card f1">
+              <div class="sc-label">F1 Macro</div>
+              <div class="sc-val dim" id="sc-f1-macro">—</div>
+              <div class="sc-sub" id="sc-f1-macro-sub">averaged over 10 classes</div>
+            </div>
+            <div class="score-card f1">
+              <div class="sc-label">F1 Weighted</div>
+              <div class="sc-val dim" id="sc-f1-weighted">—</div>
+              <div class="sc-sub" id="sc-f1-weighted-sub">support-weighted</div>
+            </div>
+            <div class="score-card auc">
+              <div class="sc-label">ROC-AUC Macro</div>
+              <div class="sc-val dim" id="sc-auc-macro">—</div>
+              <div class="sc-sub" id="sc-auc-macro-sub">OvR macro average</div>
+            </div>
+            <div class="score-card auc">
+              <div class="sc-label">ROC-AUC Weighted</div>
+              <div class="sc-val dim" id="sc-auc-weighted">—</div>
+              <div class="sc-sub" id="sc-auc-weighted-sub">support-weighted OvR</div>
+            </div>
+          </div>
+
+          <!-- Charts: ROC curve + F1 bar -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div>
+              <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between;">
+                <span>ROC Curves — all 10 classes</span>
+                <span style="color:var(--text3);">higher = better</span>
+              </div>
+              <div style="position:relative;height:220px;"><canvas id="rocChart"></canvas></div>
+            </div>
+            <div>
+              <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between;">
+                <span>Per-Class F1 Score</span>
+                <span style="color:var(--text3);">by digit 0–9</span>
+              </div>
+              <div style="position:relative;height:220px;"><canvas id="f1BarChart"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Per-class breakdown table -->
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Per-Class Breakdown</div>
+          <table class="per-class-table" id="per-class-table">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Support</th>
+                <th>F1 Score</th>
+                <th>F1 Bar</th>
+                <th>ROC-AUC</th>
+                <th>AUC Bar</th>
+              </tr>
+            </thead>
+            <tbody id="per-class-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: PREDICTIONS -->
+      <div class="tab-content" id="tab-predictions">
+        <div id="pred-empty" class="empty-state">
+          <div class="empty-icon">◈</div>
+          <div>Click "Sample Predictions" to view model outputs on test images</div>
+        </div>
+        <div id="pred-results" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text2);">First 10 test images — current model state</span>
+            <span id="pred-score" style="font-family:var(--mono);font-size:11px;color:var(--cyan);"></span>
+          </div>
+          <div class="pred-grid" id="pred-grid"></div>
+        </div>
+      </div>
+
+    </div><!-- chart-card -->
+
+  </div><!-- /right -->
+</div><!-- /main -->
+
+<!-- LOG -->
+<div class="log-card">
+  <div class="log-header">
+    <span class="log-title">API Console</span>
+    <button class="btn btn-sm" id="clear-log">Clear</button>
+  </div>
+  <div class="log-body" id="log"></div>
+</div>
+
+</div><!-- .shell -->
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const API = 'http://127.0.0.1:5000';
+
+// ─── Global State ───────────────────────────────────────────────
+let runHistory = [];
+let accChart, lossChart, healChart;
+let selectedFault = 'neuron_failure';
+let healMode = 'rollback';
+let lastDetectResult = null;
+let lastHealResult = null;
+
+const faultDescs = {
+  neuron_failure:    'Zeroes out a random subset of neurons (columns) in weight matrices. Simulates hardware neuron stuck-at-zero faults.',
+  weight_noise:      'Adds Gaussian noise N(0, severity) to all weights. Models analog hardware noise and quantisation errors.',
+  weight_zero:       'Randomly masks weights to zero with probability = severity. Simulates stuck-at-zero bit faults in memory cells.',
+  layer_degradation: 'Scales all weights in target layers by (1 − severity). Models gradual hardware wear or voltage degradation.',
+  random_swap:       'Shuffles all weight values randomly within each tensor. Models catastrophic bit-flip or data corruption events.'
+};
+
+// ─── Utilities ──────────────────────────────────────────────────
+function nowStr(){const d=new Date();return d.toTimeString().slice(0,8);}
+
+function log(msg, cls=''){
+  const el = document.getElementById('log');
+  const e = document.createElement('div');
+  e.className = 'log-entry';
+  e.innerHTML = `<span class="log-time">${nowStr()}</span><span class="log-msg ${cls}">${msg}</span>`;
+  el.appendChild(e);
+  el.scrollTop = el.scrollHeight;
+}
+
+function toast(msg, type=''){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function setStatus(text, dotClass=''){
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.className = 'dot' + (dotClass ? ' ' + dotClass : ' pulse');
+}
+
+function fmtAcc(v){ return v != null ? v.toFixed(2) + '%' : '—'; }
+function fmtLoss(v){ return v != null ? v.toFixed(4) : '—'; }
+
+function setMval(id, text, colorClass=''){
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'mval' + (colorClass ? ' ' + colorClass : '');
+}
+
+function switchTab(tabId){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.toggle('active', tc.id === 'tab-' + tabId));
+}
+
+// ─── API Fetch ───────────────────────────────────────────────────
+async function apiFetch(path, opts={}){
+  try {
+    const r = await fetch(API + path, {headers: {'Content-Type': 'application/json'}, ...opts});
+    if(!r.ok){
+      const errBody = await r.json().catch(() => ({}));
+      throw new Error(errBody.error || `HTTP ${r.status}`);
+    }
+    return await r.json();
+  } catch(e) {
+    document.getElementById('api-banner').classList.add('show');
+    throw e;
+  }
+}
+
+// ─── Charts ──────────────────────────────────────────────────────
+function chartDefaults(){
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: {display: false},
+      tooltip: {
+        backgroundColor: '#0e1318', borderColor: '#1f2d3d', borderWidth: 1,
+        titleColor: '#768a9e', bodyColor: '#cdd9e5',
+        titleFont: {family: 'JetBrains Mono', size: 10},
+        bodyFont: {family: 'JetBrains Mono', size: 11}
+      }
+    },
+    scales: {
+      x: {grid: {color: '#111c27'}, ticks: {color: '#768a9e', font: {family: 'JetBrains Mono', size: 9}}},
+      y: {grid: {color: '#111c27'}, ticks: {color: '#768a9e', font: {family: 'JetBrains Mono', size: 9}}}
+    },
+    animation: {duration: 300}
+  };
+}
+
+function initCharts(){
+  const cd = chartDefaults();
+
+  accChart = new Chart(document.getElementById('accChart'), {
+    type: 'bar',
+    data: {labels: [], datasets: [
+      {label: 'Baseline', data: [], backgroundColor: 'rgba(57,208,216,.6)',  borderColor: '#39d0d8', borderWidth: 1, borderRadius: 3},
+      {label: 'Faulty',   data: [], backgroundColor: 'rgba(240,90,90,.6)',   borderColor: '#f05a5a', borderWidth: 1, borderRadius: 3},
+      {label: 'Healed',   data: [], backgroundColor: 'rgba(61,206,122,.6)',  borderColor: '#3dce7a', borderWidth: 1, borderRadius: 3},
+    ]},
+    options: {...cd, scales: {...cd.scales, y: {...cd.scales.y, min: 0, max: 100, ticks: {...cd.scales.y.ticks, callback: v => v + '%'}}}}
+  });
+
+  lossChart = new Chart(document.getElementById('lossChart'), {
+    type: 'bar',
+    data: {labels: [], datasets: [
+      {label: 'Baseline', data: [], backgroundColor: 'rgba(57,208,216,.6)',  borderColor: '#39d0d8', borderWidth: 1, borderRadius: 3},
+      {label: 'Faulty',   data: [], backgroundColor: 'rgba(232,168,56,.6)',  borderColor: '#e8a838', borderWidth: 1, borderRadius: 3},
+      {label: 'Healed',   data: [], backgroundColor: 'rgba(61,206,122,.6)',  borderColor: '#3dce7a', borderWidth: 1, borderRadius: 3},
+    ]},
+    options: {...cd, scales: {...cd.scales, y: {...cd.scales.y, min: 0, ticks: {...cd.scales.y.ticks, callback: v => v.toFixed(3)}}}}
+  });
+
+  healChart = new Chart(document.getElementById('healChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Faulty Acc', 'Healed Acc', 'Baseline Acc'],
+      datasets: [{
+        data: [0, 0, 0],
+        backgroundColor: ['rgba(240,90,90,.65)', 'rgba(61,206,122,.65)', 'rgba(57,208,216,.65)'],
+        borderColor: ['#f05a5a', '#3dce7a', '#39d0d8'],
+        borderWidth: 1, borderRadius: 4
+      }]
+    },
+    options: {...cd, scales: {...cd.scales, y: {...cd.scales.y, min: 0, max: 100, ticks: {...cd.scales.y.ticks, callback: v => v + '%'}}}}
+  });
+}
+
+function updateHistoryCharts(){
+  const last = runHistory.slice(-8);
+  const labels = last.map((r, i) => `#${runHistory.indexOf(r)+1} ${r.fault.slice(0,6)}`);
+  accChart.data.labels = labels;
+  accChart.data.datasets[0].data = last.map(r => r.base_acc);
+  accChart.data.datasets[1].data = last.map(r => r.faulty_acc);
+  accChart.data.datasets[2].data = last.map(r => r.healed_acc ?? null);
+  accChart.update();
+  lossChart.data.labels = labels;
+  lossChart.data.datasets[0].data = last.map(r => r.base_loss);
+  lossChart.data.datasets[1].data = last.map(r => r.faulty_loss);
+  lossChart.data.datasets[2].data = last.map(r => r.healed_loss ?? null);
+  lossChart.update();
+}
+
+function updateHealChart(faultyAcc, healedAcc, baselineAcc){
+  healChart.data.datasets[0].data = [faultyAcc, healedAcc, baselineAcc];
+  healChart.update();
+}
+
+// ─── Architecture Highlight ──────────────────────────────────────
+function highlightArch(layers, mode='fault'){
+  [0,1,2,3].forEach(i => {
+    const el = document.getElementById('arch-' + i);
+    if(el) el.className = 'arch-box';
+  });
+  (layers || []).forEach(i => {
+    const el = document.getElementById('arch-' + i);
+    if(el) el.className = 'arch-box ' + mode;
+  });
+}
+
+// ─── History Table ───────────────────────────────────────────────
+function updateHistoryTable(){
+  const empty = document.getElementById('history-empty');
+  const wrap = document.getElementById('history-table-wrap');
+  if(!runHistory.length){ empty.style.display = ''; wrap.style.display = 'none'; return; }
+  empty.style.display = 'none'; wrap.style.display = '';
+  const tbody = document.getElementById('history-tbody');
+  tbody.innerHTML = runHistory.map((r, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td style="color:var(--red)">${r.fault}</td>
+      <td>${r.severity}</td>
+      <td>[${r.layers.join(',')}]</td>
+      <td style="color:var(--cyan)">${fmtAcc(r.base_acc)}</td>
+      <td style="color:var(--red)">${fmtAcc(r.faulty_acc)}</td>
+      <td style="color:${r.healed_acc != null ? 'var(--green)' : 'var(--text3)'}">${r.healed_acc != null ? fmtAcc(r.healed_acc) : '—'}</td>
+      <td style="color:var(--amber)">${r.healed_acc != null ? '+' + (r.healed_acc - r.faulty_acc).toFixed(2) + 'pp' : '—'}</td>
+    </tr>`).join('');
+}
+
+// ─── Poll Training ───────────────────────────────────────────────
+async function pollStatus(){
+  const fill = document.getElementById('progress-fill');
+  const lbl = document.getElementById('progress-label');
+  return new Promise(resolve => {
+    const iv = setInterval(async () => {
+      try {
+        const s = await apiFetch('/api/status');
+        const pct = s.total_epochs > 0 ? (s.epochs_done / s.total_epochs * 100) : 0;
+        fill.style.width = pct + '%';
+        if(s.train_log && s.train_log.length){
+          const last = s.train_log[s.train_log.length - 1];
+          lbl.textContent = `Epoch ${last.epoch}/${s.total_epochs} — acc: ${last.accuracy}%  loss: ${last.loss}`;
+        }
+        if(s.status === 'ready'){ clearInterval(iv); fill.style.width = '100%'; resolve(s); }
+        else if(s.status === 'error'){ clearInterval(iv); resolve(s); }
+      } catch(e){ clearInterval(iv); resolve({status: 'error', error: String(e)}); }
+    }, 800);
+  });
+}
+
+// ─── TRAIN ───────────────────────────────────────────────────────
+async function doTrain(){
+  const epochs = parseInt(document.getElementById('epoch-input').value) || 5;
+  ['train-btn','inject-btn','detect-btn','heal-btn','reset-btn','pred-btn','scores-btn','scores-btn-top'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.disabled = true;
+  });
+  setStatus('training…', 'amber');
+  log(`POST /api/train  epochs=${epochs}`, 'info');
+  try {
+    await apiFetch('/api/train', {method: 'POST', body: JSON.stringify({epochs})});
+    log('Training started — polling…', 'dim');
+    const s = await pollStatus();
+    if(s.status === 'error'){
+      log('Training error: ' + s.error, 'err');
+      toast('Training failed: ' + s.error, 'err');
+      setStatus('error', 'red'); return;
+    }
+    // Update baseline metrics
+    setMval('base-acc',  s.baseline_acc + '%', 'cyan');
+    setMval('base-loss', s.baseline_loss, '');
+    document.getElementById('base-acc-sub').textContent = epochs + ' epochs · Adam';
+    document.getElementById('base-loss-sub').textContent = 'SparseCatCrossentropy';
+    document.getElementById('api-banner').classList.remove('show');
+    setStatus('ready', 'green');
+    ['inject-btn','reset-btn','pred-btn','scores-btn','scores-btn-top'].forEach(id => document.getElementById(id).disabled = false);
+    highlightArch([0,1,2,3], 'active');
+    log(`Training complete — baseline acc=${s.baseline_acc}%  loss=${s.baseline_loss}`, 'ok');
+    toast('Model ready — acc ' + s.baseline_acc + '%', 'ok');
+  } catch(e){
+    log('Error: ' + e.message, 'err');
+    setStatus('error', 'red');
+  } finally {
+    document.getElementById('train-btn').disabled = false;
+  }
+}
+
+// ─── INJECT ──────────────────────────────────────────────────────
+async function doInject(){
+  const severity = parseFloat(document.getElementById('severity').value);
+  const target_layers = [...document.querySelectorAll('.layer-check input:checked')].map(e => +e.dataset.layer);
+  if(!target_layers.length){ toast('Select at least one target layer', 'err'); return; }
+
+  const btn = document.getElementById('inject-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">↻</span> Injecting…';
+  document.getElementById('detect-btn').disabled = true;
+  document.getElementById('heal-btn').disabled = true;
+  setStatus('injecting…', 'amber');
+  highlightArch(target_layers, 'fault');
+  log(`POST /api/inject  fault=${selectedFault}  severity=${severity}  layers=[${target_layers}]`, 'info');
+
+  try {
+    const res = await apiFetch('/api/inject', {
+      method: 'POST',
+      body: JSON.stringify({fault_type: selectedFault, severity, target_layers})
+    });
+
+    // Faulty metrics
+    const accColorClass = res.faulty_acc < 60 ? 'red' : res.faulty_acc < 85 ? 'amber' : '';
+    setMval('faulty-acc',  res.faulty_acc + '%', accColorClass);
+    setMval('faulty-loss', res.faulty_loss, '');
+    document.getElementById('faulty-acc-sub').textContent  = `↓ ${res.acc_drop.toFixed(2)}pp from baseline`;
+    document.getElementById('faulty-loss-sub').textContent = `↑ ${res.loss_increase.toFixed(4)} from baseline`;
+
+    // Delta metrics
+    setMval('acc-drop',   '−' + res.acc_drop.toFixed(2) + 'pp', 'red');
+    setMval('loss-delta', '+' + res.loss_increase.toFixed(4), 'amber');
+    document.getElementById('acc-drop-sub').textContent   = 'accuracy degradation';
+    document.getElementById('loss-delta-sub').textContent = 'loss increase';
+
+    // Reset heal metrics on new injection
+    setMval('healed-acc',   '—', 'dim');
+    setMval('acc-recovery', '—', 'dim');
+    document.getElementById('healed-acc-sub').textContent   = 'heal model';
+    document.getElementById('acc-recovery-sub').textContent = 'pp recovered';
+
+    // Weight deltas tab
+    if(res.weight_deltas && res.weight_deltas.length){
+      document.getElementById('deltas-empty').style.display = 'none';
+      document.getElementById('deltas-results').style.display = '';
+      const tbody = document.getElementById('delta-body');
+      tbody.innerHTML = res.weight_deltas.map(d => `
+        <tr>
+          <td style="color:var(--text2);">tensor L${d.layer}</td>
+          <td>${d.mean_delta.toFixed(6)}</td>
+          <td>${d.max_delta.toFixed(6)}</td>
+          <td>${d.pct_changed.toFixed(1)}%<span class="pct-bar" style="width:${Math.min(d.pct_changed * 2, 150)}px;"></span></td>
+        </tr>`).join('');
+    }
+
+    // History
+    runHistory.push({
+      fault: selectedFault, severity, layers: target_layers,
+      base_acc: res.baseline_acc, base_loss: res.baseline_loss,
+      faulty_acc: res.faulty_acc, faulty_loss: res.faulty_loss,
+      healed_acc: null, healed_loss: null,
+      affected: res.affected_layers
+    });
+    updateHistoryCharts();
+    updateHistoryTable();
+
+    // Enable detect & heal
+    document.getElementById('detect-btn').disabled = false;
+    document.getElementById('heal-btn').disabled = false;
+
+    setStatus('ready — fault injected', 'amber');
+    log(`  → faulty acc=${res.faulty_acc}%  loss=${res.faulty_loss}  Δacc=−${res.acc_drop.toFixed(2)}pp`, res.faulty_acc > 85 ? 'warn' : 'err');
+    toast(`Fault injected — acc dropped to ${res.faulty_acc}%`, res.faulty_acc < 60 ? 'err' : '');
+
+    // Auto-switch to history tab
+    switchTab('history');
+
+  } catch(e){
+    log('Injection error: ' + e.message, 'err');
+    toast('Injection failed', 'err');
+    setStatus('error', 'red');
+    highlightArch([0,1,2,3], 'active');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Inject Fault';
+  }
+}
+
+// ─── DETECT ──────────────────────────────────────────────────────
+async function doDetect(){
+  const threshold = parseFloat(document.getElementById('threshold').value);
+  const sample_size = parseInt(document.getElementById('sample-size').value);
+  const btn = document.getElementById('detect-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">↻</span> Detecting…';
+  setStatus('detecting…', 'amber');
+  log(`POST /api/detect  threshold=${threshold}  sample_size=${sample_size}`, 'purple');
+
+  try {
+    const res = await apiFetch('/api/detect', {
+      method: 'POST',
+      body: JSON.stringify({threshold, sample_size})
+    });
+
+    lastDetectResult = res;
+    switchTab('detect');
+
+    // Status bar
+    const statusBar = document.getElementById('detect-status-bar');
+    const dsMain = document.getElementById('ds-main-text');
+    const dsSub = document.getElementById('ds-sub-text');
+    if(res.is_faulty){
+      statusBar.className = 'detect-status fault';
+      statusBar.querySelector('.ds-icon').textContent = '⚠';
+      dsMain.textContent = 'FAULT DETECTED';
+      dsSub.textContent = `Activation anomalies found · threshold=${threshold} · ${sample_size} samples`;
+    } else {
+      statusBar.className = 'detect-status ok';
+      statusBar.querySelector('.ds-icon').textContent = '✓';
+      dsMain.textContent = 'No significant faults detected';
+      dsSub.textContent = `All layers within threshold=${threshold} · ${sample_size} samples`;
+    }
+
+    // Layer diffs table
+    document.getElementById('detect-empty').style.display = 'none';
+    document.getElementById('detect-results').style.display = '';
+    const tbody = document.getElementById('detect-tbody');
+    tbody.innerHTML = res.layer_diffs.map(d => `
+      <tr class="${d.flagged ? 'flagged' : ''}">
+        <td>${d.layer_idx}</td>
+        <td style="color:var(--text2);font-family:var(--mono);font-size:10px;">${d.layer_name}</td>
+        <td>${d.baseline_mean.toFixed(5)}</td>
+        <td>${d.current_mean.toFixed(5)}</td>
+        <td>
+          <div class="diff-bar-wrap">
+            <span>${d.diff.toFixed(5)}</span>
+            <div class="diff-bar" style="width:${Math.min(d.diff / threshold * 60, 90)}px;background:${d.flagged ? 'var(--red)' : 'var(--green)'};"></div>
+          </div>
+        </td>
+        <td style="color:var(--text2);">${threshold}</td>
+        <td><span class="flag-badge ${d.flagged ? 'yes' : 'no'}">${d.flagged ? 'FLAGGED' : 'OK'}</span></td>
+      </tr>`).join('');
+
+    const flagCount = res.layer_diffs.filter(d => d.flagged).length;
+    setStatus('ready', 'green');
+    log(`  → is_faulty=${res.is_faulty}  flagged=${flagCount}/${res.layer_diffs.length} layers`, res.is_faulty ? 'err' : 'ok');
+    toast(res.is_faulty ? `Fault detected — ${flagCount} layer(s) anomalous` : 'Detection: no faults found', res.is_faulty ? 'err' : 'ok');
+
+  } catch(e){
+    log('Detection error: ' + e.message, 'err');
+    toast('Detection failed', 'err');
+    setStatus('error', 'red');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔍 Run Detection';
+  }
+}
+
+// ─── HEAL ────────────────────────────────────────────────────────
+async function doHeal(){
+  const strength = parseFloat(document.getElementById('heal-strength').value);
+  const layer_idx = healMode === 'layer' ? parseInt(document.getElementById('layer-idx').value) : null;
+  const btn = document.getElementById('heal-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">↻</span> Healing…';
+  setStatus('healing…', 'amber');
+
+  const body = {mode: healMode, strength};
+  if(healMode === 'layer') body.layer_idx = layer_idx;
+
+  log(`POST /api/heal  mode=${healMode}  strength=${strength}${healMode === 'layer' ? '  layer_idx='+layer_idx : ''}`, 'ok');
+
+  try {
+    const res = await apiFetch('/api/heal', {method: 'POST', body: JSON.stringify(body)});
+    lastHealResult = res;
+
+    // Update heal metrics
+    const healColor = res.healed_acc >= 85 ? 'green' : res.healed_acc >= 70 ? 'amber' : 'red';
+    setMval('healed-acc',   res.healed_acc + '%', healColor);
+    setMval('acc-recovery', '+' + res.acc_recovery.toFixed(2) + 'pp', 'green');
+    document.getElementById('healed-acc-sub').textContent   = `gap to baseline: ${res.acc_remaining_gap.toFixed(2)}pp`;
+    document.getElementById('acc-recovery-sub').textContent = healMode === 'layer' ? `layer ${layer_idx} restored` : `strength=${strength}`;
+
+    // Heal results tab
+    document.getElementById('heal-empty').style.display = 'none';
+    document.getElementById('heal-results').style.display = '';
+    document.getElementById('heal-mode-label').textContent =
+      healMode === 'rollback'
+        ? `Rollback Blend — strength ${strength}`
+        : `Layer Repair — layer ${layer_idx} fully restored`;
+
+    document.getElementById('h-pre-acc').textContent  = fmtAcc(res.faulty_acc);
+    document.getElementById('h-post-acc').textContent = fmtAcc(res.healed_acc);
+    document.getElementById('h-recovery').textContent = '+' + res.acc_recovery.toFixed(2) + 'pp';
+    document.getElementById('h-base-acc').textContent = fmtAcc(res.baseline_acc);
+    document.getElementById('h-post-loss').textContent = fmtLoss(res.healed_loss);
+    document.getElementById('h-gap').textContent = res.acc_remaining_gap.toFixed(2) + 'pp';
+
+    // Update heal chart
+    updateHealChart(res.faulty_acc, res.healed_acc, res.baseline_acc);
+
+    // Update history
+    if(runHistory.length){
+      const last = runHistory[runHistory.length - 1];
+      last.healed_acc = res.healed_acc;
+      last.healed_loss = res.healed_loss;
+      updateHistoryCharts();
+      updateHistoryTable();
+    }
+
+    // Highlight arch in heal color
+    highlightArch(healMode === 'layer' ? [layer_idx] : [1, 3], 'heal');
+
+    switchTab('heal');
+    setStatus('ready — healed', 'green');
+    log(`  → healed acc=${res.healed_acc}%  loss=${res.healed_loss}  recovery=+${res.acc_recovery.toFixed(2)}pp`, 'ok');
+    toast(`Healed! Acc recovered to ${res.healed_acc}% (+${res.acc_recovery.toFixed(2)}pp)`, 'ok');
+
+  } catch(e){
+    log('Heal error: ' + e.message, 'err');
+    toast('Healing failed: ' + e.message, 'err');
+    setStatus('error', 'red');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✦ Heal Model';
+  }
+}
+
+// ─── RESET ───────────────────────────────────────────────────────
+async function doReset(){
+  log('POST /api/reset', 'info');
+  try {
+    const res = await apiFetch('/api/reset', {method: 'POST'});
+    log('  → ' + res.message, 'ok');
+    toast('Weights reset to baseline', 'ok');
+    // Clear faulty / healed metrics
+    ['faulty-acc','faulty-loss','acc-drop','loss-delta','healed-acc','acc-recovery'].forEach(id => setMval(id, '—', 'dim'));
+    document.getElementById('faulty-acc-sub').textContent = 'inject fault';
+    document.getElementById('faulty-loss-sub').textContent = 'inject fault';
+    document.getElementById('acc-drop-sub').textContent = 'pp from baseline';
+    document.getElementById('loss-delta-sub').textContent = 'from baseline';
+    document.getElementById('healed-acc-sub').textContent = 'heal model';
+    document.getElementById('acc-recovery-sub').textContent = 'pp recovered';
+    highlightArch([0,1,2,3], 'active');
+    document.getElementById('detect-btn').disabled = true;
+    document.getElementById('heal-btn').disabled = true;
+    // Reset detect/heal UI
+    document.getElementById('detect-empty').style.display = '';
+    document.getElementById('detect-results').style.display = 'none';
+    document.getElementById('heal-empty').style.display = '';
+    document.getElementById('heal-results').style.display = 'none';
+    document.getElementById('deltas-empty').style.display = '';
+    document.getElementById('deltas-results').style.display = 'none';
+    setStatus('ready', 'green');
+  } catch(e){
+    log('Reset error: ' + e.message, 'err');
+  }
+}
+
+// ─── SAMPLE PREDICTIONS ──────────────────────────────────────────
+async function doPredict(){
+  const btn = document.getElementById('pred-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">↻</span> Loading…';
+  log('GET /api/sample_predictions', 'info');
+  try {
+    const res = await apiFetch('/api/sample_predictions');
+    const grid = document.getElementById('pred-grid');
+    const correct = res.predictions.filter(p => p.correct).length;
+    document.getElementById('pred-score').textContent = `${correct}/10 correct`;
+    grid.innerHTML = res.predictions.map(p => {
+      const topProbs = p.probs
+        .map((v, i) => ({v, i}))
+        .sort((a, b) => b.v - a.v)
+        .slice(0, 3);
+      return `
+        <div class="pred-card ${p.correct ? 'correct' : 'wrong'}">
+          <div class="pred-digit">${p.pred_label}</div>
+          <div class="pred-label">true: ${p.true_label}</div>
+          <div class="pred-conf ${p.correct ? 'correct' : 'wrong'}">${p.confidence.toFixed(1)}%</div>
+          <div class="prob-bars">
+            ${topProbs.map(t => `
+              <div class="prob-bar-row">
+                <span style="width:10px;">${t.i}</span>
+                <div class="prob-bar-fill" style="width:${Math.round(t.v * 60)}px;background:${t.i === p.true_label ? 'var(--green)' : t.i === p.pred_label && !p.correct ? 'var(--red)' : 'var(--cyan2)'}"></div>
+                <span>${(t.v * 100).toFixed(0)}%</span>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }).join('');
+    document.getElementById('pred-empty').style.display = 'none';
+    document.getElementById('pred-results').style.display = '';
+    switchTab('predictions');
+    log(`  → ${correct}/10 correct`, correct >= 8 ? 'ok' : 'warn');
+  } catch(e){
+    log('Predictions error: ' + e.message, 'err');
+    toast('Failed to load predictions', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '◈ Sample Predictions';
+  }
+}
+
+// ─── CONNECTION CHECK ────────────────────────────────────────────
+async function checkConnection(){
+  try {
+    const s = await apiFetch('/api/status');
+    document.getElementById('api-banner').classList.remove('show');
+    if(s.status === 'ready'){
+      setStatus('ready', 'green');
+      setMval('base-acc',  s.baseline_acc + '%', 'cyan');
+      setMval('base-loss', s.baseline_loss, '');
+      document.getElementById('base-acc-sub').textContent  = 'model loaded';
+      document.getElementById('base-loss-sub').textContent = 'SparseCatCrossentropy';
+      ['inject-btn','reset-btn','pred-btn','scores-btn','scores-btn-top'].forEach(id => document.getElementById(id).disabled = false);
+      if(s.last_faulty_acc != null){
+        setMval('faulty-acc',  s.last_faulty_acc + '%', s.last_faulty_acc < 60 ? 'red' : 'amber');
+        setMval('faulty-loss', s.last_faulty_loss, '');
+        document.getElementById('detect-btn').disabled = false;
+        document.getElementById('heal-btn').disabled = false;
+      }
+      if(s.last_healed_acc != null){
+        setMval('healed-acc',  s.last_healed_acc + '%', 'green');
+      }
+      highlightArch([0,1,2,3], 'active');
+      log('Backend connected — model already trained and ready', 'ok');
+    } else {
+      setStatus('connected', 'green');
+      log('Backend connected — click "Train Model" to begin', 'info');
+    }
+  } catch(e){
+    setStatus('offline', 'red');
+    document.getElementById('api-banner').classList.add('show');
+    log('Backend not reachable — is app.py running on port 5000?', 'err');
+  }
+}
+
+// ─── SCORES: F1 & ROC-AUC ────────────────────────────────────────
+let rocChart = null;
+let f1BarChart = null;
+let selectedScoreModel = 'current';
+
+const CLASS_COLORS = [
+  '#39d0d8','#3dce7a','#f05a5a','#e8a838','#a98cf4',
+  '#4d9ef7','#f07050','#70d0a8','#d870d0','#c8c040'
+];
+
+function initScoreCharts(){
+  const cd = chartDefaults();
+
+  rocChart = new Chart(document.getElementById('rocChart'), {
+    type: 'line',
+    data: {labels: [], datasets: []},
+    options: {
+      ...cd,
+      elements: {point: {radius: 0}},
+      scales: {
+        x: {...cd.scales.x, min: 0, max: 1, title: {display: true, text: 'FPR', color: '#768a9e', font: {family: 'JetBrains Mono', size: 9}}},
+        y: {...cd.scales.y, min: 0, max: 1, title: {display: true, text: 'TPR', color: '#768a9e', font: {family: 'JetBrains Mono', size: 9}}}
+      },
+      plugins: {
+        ...cd.plugins,
+        legend: {
+          display: true, position: 'right',
+          labels: {color: '#768a9e', font: {family: 'JetBrains Mono', size: 9}, boxWidth: 10, padding: 8}
+        }
+      }
+    }
+  });
+
+  f1BarChart = new Chart(document.getElementById('f1BarChart'), {
+    type: 'bar',
+    data: {
+      labels: ['0','1','2','3','4','5','6','7','8','9'],
+      datasets: [{
+        label: 'F1 Score',
+        data: new Array(10).fill(0),
+        backgroundColor: CLASS_COLORS.map(c => c + 'aa'),
+        borderColor: CLASS_COLORS,
+        borderWidth: 1, borderRadius: 3
+      }]
+    },
+    options: {
+      ...cd,
+      scales: {
+        x: {...cd.scales.x},
+        y: {...cd.scales.y, min: 0, max: 1, ticks: {...cd.scales.y.ticks, callback: v => v.toFixed(1)}}
+      }
+    }
+  });
+}
+
+function scColor(v, type='f1'){
+  if(v == null) return 'dim';
+  if(type === 'auc') return v >= 0.98 ? 'green' : v >= 0.95 ? 'blue' : v >= 0.9 ? 'amber' : 'red';
+  return v >= 0.95 ? 'green' : v >= 0.85 ? 'blue' : v >= 0.70 ? 'amber' : 'red';
+}
+
+function setSc(id, val, type='f1'){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(val == null){ el.textContent = '—'; el.className = 'sc-val dim'; return; }
+  el.textContent = val.toFixed(4);
+  el.className = 'sc-val ' + scColor(val, type);
+}
+
+async function doScores(){
+  const btn1 = document.getElementById('scores-btn');
+  const btn2 = document.getElementById('scores-btn-top');
+  [btn1, btn2].forEach(b => { if(b){ b.disabled = true; b.innerHTML = '<span class="spin">↻</span> Computing…'; } });
+  log(`POST /api/scores  model=${selectedScoreModel}`, 'purple');
+
+  try {
+    const res = await apiFetch('/api/scores', {
+      method: 'POST',
+      body: JSON.stringify({model: selectedScoreModel, sample_size: 2000})
+    });
+
+    // Show results
+    document.getElementById('scores-empty').style.display = 'none';
+    document.getElementById('scores-results').style.display = '';
+    switchTab('scores');
+
+    // Summary cards
+    setSc('sc-f1-macro',    res.f1_macro,    'f1');
+    setSc('sc-f1-weighted', res.f1_weighted, 'f1');
+    setSc('sc-auc-macro',   res.auc_macro,   'auc');
+    setSc('sc-auc-weighted',res.auc_weighted,'auc');
+    document.getElementById('sc-f1-macro-sub').textContent    = `model: ${res.model_choice} · n=${res.sample_size}`;
+    document.getElementById('sc-f1-weighted-sub').textContent  = `micro: ${res.f1_micro.toFixed(4)}`;
+    document.getElementById('sc-auc-macro-sub').textContent    = 'OvR macro · 10 classes';
+    document.getElementById('sc-auc-weighted-sub').textContent = 'OvR support-weighted';
+
+    // ROC curve chart — one dataset per class
+    rocChart.data.datasets = res.per_class.map((pc, i) => ({
+      label: `${pc.class} (AUC ${pc.auc != null ? pc.auc.toFixed(3) : 'N/A'})`,
+      data: pc.fpr.map((x, j) => ({x, y: pc.tpr[j]})),
+      borderColor: CLASS_COLORS[i],
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      tension: 0.1,
+      parsing: false
+    }));
+    // Diagonal reference line
+    rocChart.data.datasets.push({
+      label: 'Random',
+      data: [{x:0,y:0},{x:1,y:1}],
+      borderColor: 'rgba(255,255,255,.1)',
+      borderDash: [4,4],
+      borderWidth: 1,
+      pointRadius: 0,
+      parsing: false
+    });
+    rocChart.update();
+
+    // F1 bar chart
+    f1BarChart.data.datasets[0].data = res.per_class.map(pc => pc.f1);
+    f1BarChart.update();
+
+    // Per-class table
+    const tbody = document.getElementById('per-class-tbody');
+    tbody.innerHTML = res.per_class.map(pc => {
+      const f1Color = pc.f1 >= 0.95 ? 'var(--green)' : pc.f1 >= 0.85 ? 'var(--blue)' : pc.f1 >= 0.70 ? 'var(--amber)' : 'var(--red)';
+      const aucColor = pc.auc == null ? 'var(--text3)' : pc.auc >= 0.99 ? 'var(--green)' : pc.auc >= 0.97 ? 'var(--blue)' : 'var(--amber)';
+      return `
+        <tr>
+          <td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${CLASS_COLORS[pc.class]};margin-right:7px;vertical-align:middle;"></span>Digit ${pc.class}</td>
+          <td style="color:var(--text2);">${pc.support}</td>
+          <td style="color:${f1Color};font-weight:600;">${pc.f1.toFixed(4)}</td>
+          <td><span class="mini-bar" style="width:${Math.round(pc.f1*80)}px;background:${f1Color};"></span></td>
+          <td style="color:${aucColor};font-weight:600;">${pc.auc != null ? pc.auc.toFixed(4) : '—'}</td>
+          <td>${pc.auc != null ? `<span class="mini-bar" style="width:${Math.round((pc.auc-0.5)*160)}px;background:${aucColor};"></span>` : '—'}</td>
+        </tr>`;
+    }).join('');
+
+    log(`  → F1 macro=${res.f1_macro.toFixed(4)}  AUC macro=${res.auc_macro != null ? res.auc_macro.toFixed(4) : 'N/A'}`, 'purple');
+    toast(`Scores: F1=${res.f1_macro.toFixed(3)}  AUC=${res.auc_macro != null ? res.auc_macro.toFixed(3) : 'N/A'}`, 'purple');
+
+  } catch(e){
+    log('Scores error: ' + e.message, 'err');
+    toast('Score computation failed: ' + e.message, 'err');
+  } finally {
+    [btn1, btn2].forEach(b => {
+      if(b){ b.disabled = false; b.innerHTML = b.id === 'scores-btn' ? '⬡ Compute Scores' : '⬡ F1 &amp; AUC'; }
+    });
+  }
+}
+
+// ─── EVENT LISTENERS ─────────────────────────────────────────────
+document.querySelectorAll('.fault-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fault-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedFault = btn.dataset.fault;
+    document.getElementById('fd-title').textContent = selectedFault;
+    document.getElementById('fd-text').textContent  = faultDescs[selectedFault];
+  });
+});
+
+document.getElementById('severity').addEventListener('input', e => {
+  document.getElementById('sev-val').textContent = parseFloat(e.target.value).toFixed(2);
+});
+document.getElementById('threshold').addEventListener('input', e => {
+  document.getElementById('thresh-val').textContent = parseFloat(e.target.value).toFixed(2);
+});
+document.getElementById('sample-size').addEventListener('input', e => {
+  document.getElementById('sample-val').textContent = e.target.value;
+});
+document.getElementById('heal-strength').addEventListener('input', e => {
+  document.getElementById('strength-val').textContent = parseFloat(e.target.value).toFixed(2);
+});
+
+document.querySelectorAll('.layer-check').forEach(lc => {
+  lc.addEventListener('click', () => {
+    const cb = lc.querySelector('input');
+    cb.checked = !cb.checked;
+    lc.classList.toggle('checked', cb.checked);
+  });
+});
+
+document.querySelectorAll('.heal-mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.heal-mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    healMode = btn.dataset.mode;
+    document.getElementById('heal-rollback-controls').style.display = healMode === 'rollback' ? '' : 'none';
+    document.getElementById('heal-layer-controls').style.display    = healMode === 'layer'    ? '' : 'none';
+  });
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+});
+
+document.getElementById('train-btn').addEventListener('click', doTrain);
+document.getElementById('inject-btn').addEventListener('click', doInject);
+document.getElementById('detect-btn').addEventListener('click', doDetect);
+document.getElementById('heal-btn').addEventListener('click', doHeal);
+document.getElementById('reset-btn').addEventListener('click', doReset);
+document.getElementById('pred-btn').addEventListener('click', doPredict);
+document.getElementById('scores-btn').addEventListener('click', doScores);
+document.getElementById('scores-btn-top').addEventListener('click', doScores);
+document.getElementById('clear-log').addEventListener('click', () => document.getElementById('log').innerHTML = '');
+
+document.querySelectorAll('.score-model-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.score-model-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedScoreModel = btn.dataset.smodel;
+  });
+});
+
+// ─── Init ────────────────────────────────────────────────────────
+initCharts();
+initScoreCharts();
+log('FaultSim GUI loaded — checking backend connection…', 'dim');
+checkConnection();
+</script>
+</body>
+</html>
