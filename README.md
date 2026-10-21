@@ -252,7 +252,3 @@ Ideas for future work:
 Contributions, issues and ideas are welcome.
 
 ---
-
-## License
-
-Released under the [MIT License](LICENSE.txt). © 2026 Ved4ntK
